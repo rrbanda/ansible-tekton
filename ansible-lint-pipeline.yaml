@@ -1,0 +1,54 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: ansible-lint-pipeline
+spec:
+  params:
+    - name: git-url
+      type: string
+    - name: git-revision
+      type: string
+      default: main
+    - name: target-repo-url
+      type: string
+  workspaces:
+    - name: shared-workspace
+  tasks:
+    - name: clone-source
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+
+    - name: lint-ansible
+      runAfter: [clone-source]
+      taskSpec:
+        steps:
+          - name: lint
+            image: python:3.11
+            workingDir: $(workspaces.shared.path)
+            script: |
+              pip install --no-cache-dir ansible-lint
+              ansible-lint **/*.yml
+      workspaces:
+        - name: shared
+          workspace: shared-workspace
+
+    - name: promote-playbook
+      runAfter: [lint-ansible]
+      taskRef:
+        name: promote-playbook
+      params:
+        - name: target-repo-url
+          value: $(params.target-repo-url)
+      workspaces:
+        - name: shared
+          workspace: shared-workspace
+

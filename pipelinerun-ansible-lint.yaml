@@ -1,0 +1,18 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: ansible-lint-run
+spec:
+  pipelineRef:
+    name: ansible-lint-pipeline
+  params:
+    - name: git-url
+      value: https://github.com/rrbanda/ansible-tekton.git
+    - name: git-revision
+      value: main
+    - name: target-repo-url
+      value: https://github.com/rrbanda/promoted-playbooks.git
+  workspaces:
+    - name: shared-workspace
+      persistentVolumeClaim:
+        claimName: ansible-tekton-pvc

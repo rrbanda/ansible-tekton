@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: promote-playbook
+spec:
+  params:
+    - name: target-repo-url
+      type: string
+  workspaces:
+    - name: shared
+  steps:
+    - name: promote
+      image: alpine/git
+      workingDir: \$(workspaces.shared.path)
+      script: |
+        #!/bin/sh
+        set -e
+        git config --global user.email "tekton@example.com"
+        git config --global user.name "Tekton Pipeline"
+        mkdir -p promote && cd promote
+        git clone \$(params.target-repo-url) .
+        cp -r ../* .
+        git add .
+        git commit -m "Promoted playbooks post lint check"
+        git push origin HEAD

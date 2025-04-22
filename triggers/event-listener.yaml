@@ -1,0 +1,12 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: ansible-lint-listener
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: ansible-lint-trigger
+      bindings:
+        - ref: ansible-lint-trigger-binding
+      template:
+        ref: ansible-lint-trigger-template

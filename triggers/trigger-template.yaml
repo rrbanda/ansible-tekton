@@ -1,0 +1,28 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: ansible-lint-trigger-template
+spec:
+  params:
+    - name: git-url
+    - name: git-revision
+    - name: target-repo-url
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: ansible-lint-run-
+      spec:
+        pipelineRef:
+          name: ansible-lint-pipeline
+        params:
+          - name: git-url
+            value: $(params.git-url)
+          - name: git-revision
+            value: $(params.git-revision)
+          - name: target-repo-url
+            value: $(params.target-repo-url)
+        workspaces:
+          - name: shared-workspace
+            persistentVolumeClaim:
+              claimName: ansible-tekton-pvc

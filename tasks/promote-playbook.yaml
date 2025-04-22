@@ -11,15 +11,15 @@ spec:
   steps:
     - name: promote
       image: alpine/git
-      workingDir: \$(workspaces.shared.path)
+      workingDir: $(workspaces.shared.path)
       script: |
         #!/bin/sh
         set -e
         git config --global user.email "tekton@example.com"
         git config --global user.name "Tekton Pipeline"
         mkdir -p promote && cd promote
-        git clone \$(params.target-repo-url) .
-        cp -r ../* .
+        git clone $(params.target-repo-url) .
+        cp -r ../passed/* .
         git add .
-        git commit -m "Promoted playbooks post lint check"
+        git commit -m "Promoted playbooks that passed lint"
         git push origin HEAD

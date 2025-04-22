@@ -36,7 +36,18 @@ spec:
             workingDir: $(workspaces.shared.path)
             script: |
               pip install --no-cache-dir ansible-lint
-              ansible-lint **/*.yml
+              echo "Linting all playbooks..."
+              mkdir -p passed failed
+              for file in samples/*.yml; do
+                echo "Linting $file..."
+                if ansible-lint "$file"; then
+                  echo "$file passed lint" && cp "$file" passed/
+                else
+                  echo "$file failed lint" && cp "$file" failed/
+                fi
+              done
+              echo "✅ Passed:" && ls passed/ || true
+              echo "❌ Failed:" && ls failed/ || true
       workspaces:
         - name: shared
           workspace: shared-workspace

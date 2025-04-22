@@ -166,3 +166,4 @@ Feel free to fork, extend or submit PRs to add:
 - [Tekton Triggers GitHub Example](https://github.com/tektoncd/triggers)
 
 ---
+# Trigger test

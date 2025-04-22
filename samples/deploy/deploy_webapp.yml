@@ -1,0 +1,8 @@
+---
+- name: Deploy simple app to OpenShift
+  hosts: localhost
+  tasks:
+    - name: Create Deployment
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('file', 'samples/deploy/deployment.yaml') }}"

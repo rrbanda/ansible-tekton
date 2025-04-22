@@ -1,0 +1,9 @@
+---
+- name: Apply OpenShift route (broken)
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Apply Route YAML
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('file', 'samples/deploy/route.yaml') }}"

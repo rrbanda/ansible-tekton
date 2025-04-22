@@ -11,7 +11,7 @@ spec:
     - name: git-revision
       value: main
     - name: target-repo-url
-      value: https://github.com/rrbanda/promoted-playbooks.git
+      value: https://github.com/rrbanda/ansible-tekton.git
   workspaces:
     - name: shared-workspace
       persistentVolumeClaim:

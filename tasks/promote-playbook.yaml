@@ -15,11 +15,24 @@ spec:
       script: |
         #!/bin/sh
         set -e
+
+        echo "🔧 Configuring Git..."
         git config --global user.email "tekton@example.com"
         git config --global user.name "Tekton Pipeline"
+
+        echo "📁 Cloning public repo (read-only)..."
         mkdir -p promote && cd promote
         git clone $(params.target-repo-url) .
-        cp -r ../passed/* .
-        git add .
-        git commit -m "Promoted playbooks that passed lint"
-        git push origin HEAD
+        mkdir -p promoted
+
+        echo "📦 Copying files that passed lint..."
+        cp -r ../passed/* promoted/ || echo "⚠️ Nothing to promote"
+
+        echo "📝 Staging promoted files..."
+        git add promoted/
+        git status
+
+        echo "🔍 Showing staged changes:"
+        git diff --cached || true
+
+        echo "✅ Promotion step completed (no commit/push in public mode)"

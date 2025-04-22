@@ -8,8 +8,12 @@ spec:
       type: string
     - name: git-revision
       type: string
-      default: main
+      default: dev
     - name: target-repo-url
+      type: string
+    - name: pr-base-branch
+      type: string
+    - name: target-branch
       type: string
   workspaces:
     - name: shared-workspace
@@ -30,27 +34,28 @@ spec:
     - name: lint-ansible
       runAfter: [clone-source]
       taskSpec:
+        workspaces:
+          - name: shared-workspace
         steps:
           - name: lint
             image: python:3.11
-            workingDir: $(workspaces.shared.path)
+            workingDir: $(workspaces.shared-workspace.path)
             script: |
+       
               pip install --no-cache-dir ansible-lint
-              echo "Linting all playbooks..."
+              echo "🔍 Linting playbooks..."
               mkdir -p passed failed
               for file in samples/*.yml; do
-                echo "Linting $file..."
+                echo "📂 Checking $file"
                 if ansible-lint "$file"; then
-                  echo "$file passed lint" && cp "$file" passed/
+                  cp "$file" passed/
                 else
-                  echo "$file failed lint" && cp "$file" failed/
+                  cp "$file" failed/
                 fi
               done
               echo "✅ Passed:" && ls passed/ || true
               echo "❌ Failed:" && ls failed/ || true
-      workspaces:
-        - name: shared
-          workspace: shared-workspace
+
 
     - name: promote-playbook
       runAfter: [lint-ansible]
@@ -59,7 +64,10 @@ spec:
       params:
         - name: target-repo-url
           value: $(params.target-repo-url)
+        - name: pr-base-branch
+          value: $(params.pr-base-branch)
+        - name: target-branch
+          value: $(params.target-branch)
       workspaces:
         - name: shared
           workspace: shared-workspace
-

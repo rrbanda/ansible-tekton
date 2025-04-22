@@ -1,0 +1,29 @@
+---
+- name: Deploy nginx app to OpenShift
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Create webapp Deployment
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: webapp
+            namespace: ansible-tekton
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: webapp
+            template:
+              metadata:
+                labels:
+                  app: webapp
+              spec:
+                containers:
+                  - name: nginx
+                    image: nginx
+                    ports:
+                      - containerPort: 80

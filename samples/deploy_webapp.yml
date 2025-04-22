@@ -1,9 +1,0 @@
----
-- name: Deploy webapp to OpenShift
-  hosts: localhost
-  gather_facts: false
-  tasks:
-    - name: Apply deployment.yaml using k8s module
-      kubernetes.core.k8s:
-        state: present
-        definition: "{{ lookup('file', 'manifests/deployment.yaml') }}"

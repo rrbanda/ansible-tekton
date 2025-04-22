@@ -1,0 +1,58 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: check-latest-pr-merge-status
+spec:
+  params:
+    - name: base-branch
+      type: string
+    - name: head-branch-prefix
+      type: string
+      default: promote-
+  steps:
+    - name: check-pr
+      image: debian:bullseye
+      script: |
+        #!/bin/bash
+        set -e
+
+        apt-get update -qq && apt-get install -y curl jq git tar
+
+        echo "⬇️ Installing gh CLI..."
+        GH_VERSION=$(curl -s https://api.github.com/repos/cli/cli/releases/latest | jq -r .tag_name)
+        curl -L https://github.com/cli/cli/releases/download/${GH_VERSION}/gh_${GH_VERSION#v}_linux_amd64.tar.gz -o gh.tgz
+        tar -xzf gh.tgz
+        cp gh_${GH_VERSION#v}_linux_amd64/bin/gh /usr/local/bin/
+        chmod +x /usr/local/bin/gh
+
+        echo "🔐 Authenticating gh CLI..."
+        export GH_TOKEN=$GITHUB_TOKEN
+
+        echo "🔍 Looking for the latest PR from head branch with prefix $(params.head-branch-prefix)..."
+        PR_JSON=$(gh pr list --state all --base "$(params.base-branch)" --json headRefName,state,url,isCrossRepository \
+                  | jq '[.[] | select(.headRefName | startswith("'$(params.head-branch-prefix)'"))] | sort_by(.headRefName) | last')
+
+        if [ -z "$PR_JSON" ] || [ "$PR_JSON" == "null" ]; then
+          echo "❌ No matching PRs found for base=$(params.base-branch)"
+          exit 0
+        fi
+
+        PR_URL=$(echo "$PR_JSON" | jq -r '.url')
+        PR_STATE=$(echo "$PR_JSON" | jq -r '.state')
+
+        echo "📄 PR found: $PR_URL"
+        echo "🔎 State: $PR_STATE"
+
+        if [ "$PR_STATE" == "MERGED" ]; then
+          echo "✅ PR has been auto-merged!"
+        elif [ "$PR_STATE" == "OPEN" ]; then
+          echo "🛑 PR is still open and waiting for review."
+        else
+          echo "⚠️ PR is in unexpected state: $PR_STATE"
+        fi
+      env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-creds
+              key: token

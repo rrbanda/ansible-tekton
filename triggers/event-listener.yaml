@@ -5,7 +5,13 @@ metadata:
 spec:
   serviceAccountName: pipeline
   triggers:
-    - name: ansible-lint-trigger
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.ref == 'refs/heads/dev'"
       bindings:
         - ref: ansible-lint-trigger-binding
       template:

@@ -8,5 +8,3 @@ spec:
       value: $(body.repository.clone_url)
     - name: git-revision
       value: $(body.ref)
-    - name: target-repo-url
-      value: https://github.com/rrbanda/promoted-playbooks.git

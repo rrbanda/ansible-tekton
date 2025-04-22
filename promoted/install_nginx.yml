@@ -1,15 +1,8 @@
 ---
-- name: Install and start NGINX
+- name: Install nginx package
   hosts: localhost
-  become: true
   tasks:
-    - name: Install NGINX
+    - name: Install nginx using dnf
       ansible.builtin.dnf:
         name: nginx
         state: present
-
-    - name: Ensure NGINX is running
-      ansible.builtin.service:
-        name: nginx
-        state: started
-        enabled: true

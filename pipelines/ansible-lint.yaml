@@ -8,7 +8,7 @@ spec:
       type: string
     - name: git-revision
       type: string
-      default: main
+      default: dev
     - name: target-repo-url
       type: string
     - name: pr-base-branch
@@ -30,6 +30,7 @@ spec:
       workspaces:
         - name: output
           workspace: shared-workspace
+          subPath: source
 
     - name: lint-ansible
       runAfter:
@@ -40,7 +41,7 @@ spec:
         steps:
           - name: lint
             image: python:3.11
-            workingDir: $(workspaces.shared-workspace.path)
+            workingDir: $(workspaces.shared-workspace.path)/source
             script: |
               #!/usr/bin/env bash
               set -e
@@ -48,31 +49,26 @@ spec:
               pip install --no-cache-dir ansible-lint
               echo "🔍 Linting playbooks..."
 
-              cd source  # Navigate to cloned repo
-
-              # Create output directories
               mkdir -p ../passed ../failed
 
-              # Check for playbooks
               if [ ! -d "samples" ]; then
                 echo "❌ Error: samples directory missing!"
                 exit 1
               fi
 
-              # Handle empty directories
               shopt -s nullglob
               for file in samples/*.yml; do
                 echo "📂 Checking $file"
                 if ansible-lint "$file"; then
-                  cp "$file" "../passed/"
+                  cp "$file" ../passed/
                 else
-                  cp "$file" "../failed/"
+                  cp "$file" ../failed/
                 fi
               done
               shopt -u nullglob
 
-              echo "✅ Passed: $(ls ../passed | wc -l) files"
-              echo "❌ Failed: $(ls ../failed | wc -l) files"
+              echo "✅ Passed:" && ls ../passed || true
+              echo "❌ Failed:" && ls ../failed || true
 
     - name: promote-playbook
       runAfter:

@@ -1,8 +1,6 @@
 ---
-- name: Install sos package
+- name: Simple ping test
   hosts: localhost
   tasks:
-    - name: Install sos using dnf
-      ansible.builtin.dnf:
-        name: sos
-        state: present
+    - name: Ping localhost
+      ansible.builtin.ping:

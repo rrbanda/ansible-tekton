@@ -1,0 +1,92 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: ansible-lint-pipeline
+spec:
+  params:
+    - name: git-url
+      type: string
+    - name: git-revision
+      type: string
+      default: main
+    - name: target-repo-url
+      type: string
+    - name: pr-base-branch
+      type: string
+    - name: target-branch
+      type: string
+  workspaces:
+    - name: shared-workspace
+  tasks:
+    - name: clone-source
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+
+    - name: lint-ansible
+      runAfter:
+        - clone-source
+      taskSpec:
+        workspaces:
+          - name: shared-workspace
+        steps:
+          - name: lint
+            image: python:3.11
+            workingDir: $(workspaces.shared-workspace.path)
+            script: |
+              #!/usr/bin/env bash
+              set -e
+
+              pip install --no-cache-dir ansible-lint
+              echo "🔍 Linting playbooks..."
+
+              cd source  # Navigate to cloned repo
+
+              # Create output directories
+              mkdir -p ../passed ../failed
+
+              # Check for playbooks
+              if [ ! -d "samples" ]; then
+                echo "❌ Error: samples directory missing!"
+                exit 1
+              fi
+
+              # Handle empty directories
+              shopt -s nullglob
+              for file in samples/*.yml; do
+                echo "📂 Checking $file"
+                if ansible-lint "$file"; then
+                  cp "$file" "../passed/"
+                else
+                  cp "$file" "../failed/"
+                fi
+              done
+              shopt -u nullglob
+
+              echo "✅ Passed: $(ls ../passed | wc -l) files"
+              echo "❌ Failed: $(ls ../failed | wc -l) files"
+
+    - name: promote-playbook
+      runAfter:
+        - lint-ansible
+      taskRef:
+        kind: Task
+        name: promote-playbook
+      params:
+        - name: target-repo-url
+          value: $(params.target-repo-url)
+        - name: pr-base-branch
+          value: $(params.pr-base-branch)
+        - name: target-branch
+          value: $(params.target-branch)
+      workspaces:
+        - name: shared
+          workspace: shared-workspace

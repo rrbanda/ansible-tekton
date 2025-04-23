@@ -1,0 +1,9 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: broken-route
+spec:
+  host: invalid.example.com
+  to:
+    kind: Service
+    name: non-existent-service

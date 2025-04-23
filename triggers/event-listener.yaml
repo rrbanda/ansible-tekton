@@ -5,13 +5,22 @@ metadata:
 spec:
   serviceAccountName: pipeline
   triggers:
-    - name: github-listener
+    - name: github-dev-branch-trigger
       interceptors:
         - ref:
             name: "cel"
           params:
             - name: "filter"
               value: "body.ref == 'refs/heads/dev'"
+        - ref:
+            name: "github"
+        - ref:
+            name: "cel"
+          params:
+            - name: "overlays"
+              value:
+                - key: branch
+                  expression: "body.ref.split('/')[2]"
       bindings:
         - ref: ansible-lint-trigger-binding
       template:

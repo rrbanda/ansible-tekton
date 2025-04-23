@@ -8,7 +8,7 @@ spec:
       type: string
     - name: git-revision
       type: string
-      default: dev
+      default: main
     - name: target-repo-url
       type: string
     - name: pr-base-branch
@@ -20,8 +20,8 @@ spec:
   tasks:
     - name: clone-source
       taskRef:
-        name: git-clone
         kind: ClusterTask
+        name: git-clone
       params:
         - name: url
           value: $(params.git-url)
@@ -32,7 +32,8 @@ spec:
           workspace: shared-workspace
 
     - name: lint-ansible
-      runAfter: [clone-source]
+      runAfter:
+        - clone-source
       taskSpec:
         workspaces:
           - name: shared-workspace
@@ -41,25 +42,43 @@ spec:
             image: python:3.11
             workingDir: $(workspaces.shared-workspace.path)
             script: |
-       
+              #!/usr/bin/env bash
+              set -e
+
               pip install --no-cache-dir ansible-lint
               echo "🔍 Linting playbooks..."
-              mkdir -p passed failed
+
+              cd source  # Navigate to cloned repo
+
+              # Create output directories
+              mkdir -p ../passed ../failed
+
+              # Check for playbooks
+              if [ ! -d "samples" ]; then
+                echo "❌ Error: samples directory missing!"
+                exit 1
+              fi
+
+              # Handle empty directories
+              shopt -s nullglob
               for file in samples/*.yml; do
                 echo "📂 Checking $file"
                 if ansible-lint "$file"; then
-                  cp "$file" passed/
+                  cp "$file" "../passed/"
                 else
-                  cp "$file" failed/
+                  cp "$file" "../failed/"
                 fi
               done
-              echo "✅ Passed:" && ls passed/ || true
-              echo "❌ Failed:" && ls failed/ || true
+              shopt -u nullglob
 
+              echo "✅ Passed: $(ls ../passed | wc -l) files"
+              echo "❌ Failed: $(ls ../failed | wc -l) files"
 
     - name: promote-playbook
-      runAfter: [lint-ansible]
+      runAfter:
+        - lint-ansible
       taskRef:
+        kind: Task
         name: promote-playbook
       params:
         - name: target-repo-url

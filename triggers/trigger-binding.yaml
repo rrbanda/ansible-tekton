@@ -7,4 +7,4 @@ spec:
     - name: git-url
       value: $(body.repository.clone_url)
     - name: git-revision
-      value: $(body.ref)
+      value: $(body.ref)  # full ref, e.g., "refs/heads/dev"
